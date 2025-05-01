@@ -25,6 +25,8 @@ export const getPosts = async (req: Request, res: Response) => {
       });
     }
 
+    console.log(`Fetching posts from r/${subreddit}...`);
+
     const response = await axios.get(
       `${REDDIT_API_BASE}/r/${subreddit}/hot.json`,
       {
@@ -43,31 +45,52 @@ export const getPosts = async (req: Request, res: Response) => {
       }
     );
 
-    if (!response.data?.data?.children) {
-      throw new Error("Invalid response format from Reddit API");
+    // Log the response structure for debugging
+    console.log("Reddit API Response Structure:", {
+      hasData: !!response.data,
+      hasDataData: !!response.data?.data,
+      hasChildren: !!response.data?.data?.children,
+      childrenLength: response.data?.data?.children?.length,
+    });
+
+    // More robust response validation
+    if (!response.data || typeof response.data !== "object") {
+      throw new Error("Invalid response: No data received");
     }
 
-    const posts = response.data.data.children.map((post: any) => ({
-      id: post.data.id,
-      title: post.data.title,
-      content: post.data.selftext,
-      author: post.data.author,
-      subreddit: post.data.subreddit,
-      score: post.data.score,
-      url: post.data.url,
-      thumbnail:
-        post.data.thumbnail ||
-        "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png",
-      created_utc: post.data.created_utc,
-      num_comments: post.data.num_comments,
-      permalink: post.data.permalink,
-      is_video: post.data.is_video,
-      media: post.data.media,
-      subreddit_name_prefixed: post.data.subreddit_name_prefixed,
-      subreddit_subscribers: post.data.subreddit_subscribers,
-      post_hint: post.data.post_hint,
-      domain: post.data.domain,
-    }));
+    if (!response.data.data || typeof response.data.data !== "object") {
+      throw new Error("Invalid response: No data.data object");
+    }
+
+    if (!Array.isArray(response.data.data.children)) {
+      throw new Error("Invalid response: No children array");
+    }
+
+    const posts = response.data.data.children
+      .filter((post: any) => post && post.data) // Filter out any invalid posts
+      .map((post: any) => ({
+        id: post.data.id,
+        title: post.data.title,
+        content: post.data.selftext,
+        author: post.data.author,
+        subreddit: post.data.subreddit,
+        score: post.data.score,
+        url: post.data.url,
+        thumbnail:
+          post.data.thumbnail ||
+          "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png",
+        created_utc: post.data.created_utc,
+        num_comments: post.data.num_comments,
+        permalink: post.data.permalink,
+        is_video: post.data.is_video,
+        media: post.data.media,
+        subreddit_name_prefixed: post.data.subreddit_name_prefixed,
+        subreddit_subscribers: post.data.subreddit_subscribers,
+        post_hint: post.data.post_hint,
+        domain: post.data.domain,
+      }));
+
+    console.log(`Successfully processed ${posts.length} posts`);
 
     res.json({
       success: true,
@@ -82,6 +105,16 @@ export const getPosts = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching Reddit posts:", error);
+
+    // Log the full error object for debugging
+    if (axios.isAxiosError(error)) {
+      console.error("Axios Error Details:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        headers: error.response?.headers,
+        data: error.response?.data,
+      });
+    }
 
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 404) {
