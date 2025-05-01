@@ -5,38 +5,46 @@ import { IUser } from "../models/User";
 // Reddit API configuration
 const REDDIT_API_BASE = "https://www.reddit.com";
 
-// Get posts from Reddit
+// Get popular posts from Reddit
 export const getPosts = async (req: Request, res: Response) => {
   try {
-    const { subreddit = "popular", limit = 25 } = req.query;
+    const { limit = 25, sort = "hot" } = req.query;
 
-    // Validate subreddit name
-    if (typeof subreddit !== "string" || !/^[a-zA-Z0-9_]+$/.test(subreddit)) {
+    // Validate sort parameter
+    const validSorts = ["hot", "new", "top", "rising"];
+    if (typeof sort !== "string" || !validSorts.includes(sort)) {
       return res.status(400).json({
         success: false,
-        error: "Invalid subreddit name",
+        error: "Invalid sort parameter. Must be one of: hot, new, top, rising",
       });
     }
 
     // Make request to Reddit API with proper headers
     const response = await axios({
       method: "get",
-      url: `${REDDIT_API_BASE}/r/${subreddit}/hot.json`,
+      url: `${REDDIT_API_BASE}/${sort}.json`,
       params: {
         limit: Number(limit),
         raw_json: 1,
+        show: "all",
+        sr_detail: true,
       },
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        Accept: "application/json",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "application/json, text/plain, */*",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate, br",
         Connection: "keep-alive",
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        DNT: "1",
       },
-      timeout: 10000,
+      timeout: 15000,
+      maxRedirects: 5,
       validateStatus: (status) => status < 500,
     });
 
@@ -44,7 +52,7 @@ export const getPosts = async (req: Request, res: Response) => {
     if (!response.data?.data?.children) {
       return res.status(404).json({
         success: false,
-        error: "No posts found in this subreddit",
+        error: "Unable to fetch popular posts",
       });
     }
 
@@ -55,22 +63,6 @@ export const getPosts = async (req: Request, res: Response) => {
         id: post.data.id,
         title: post.data.title,
         content: post.data.selftext,
-        author: post.data.author,
-        subreddit: post.data.subreddit,
-        score: post.data.score,
-        url: post.data.url,
-        thumbnail:
-          post.data.thumbnail ||
-          "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png",
-        created_utc: post.data.created_utc,
-        num_comments: post.data.num_comments,
-        permalink: post.data.permalink,
-        is_video: post.data.is_video,
-        media: post.data.media,
-        subreddit_name_prefixed: post.data.subreddit_name_prefixed,
-        subreddit_subscribers: post.data.subreddit_subscribers,
-        post_hint: post.data.post_hint,
-        domain: post.data.domain,
       }));
 
     // Return success response
@@ -78,10 +70,11 @@ export const getPosts = async (req: Request, res: Response) => {
       success: true,
       data: {
         posts,
-        subreddit,
+        sort,
         total: posts.length,
         after: response.data.data.after,
         before: response.data.data.before,
+        dist: response.data.data.dist,
       },
     });
   } catch (error) {
@@ -95,12 +88,12 @@ export const getPosts = async (req: Request, res: Response) => {
         case 404:
           return res.status(404).json({
             success: false,
-            error: "Subreddit not found",
+            error: "Unable to fetch popular posts",
           });
         case 403:
           return res.status(403).json({
             success: false,
-            error: "Unable to access subreddit. Please try again later.",
+            error: "Unable to access Reddit. Please try again later.",
           });
         case 429:
           return res.status(429).json({
