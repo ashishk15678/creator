@@ -5,8 +5,11 @@ import { IUser } from "../models/User";
 // Reddit API configuration
 const REDDIT_API_BASE = "https://www.reddit.com";
 const REDDIT_API_HEADERS = {
-  "User-Agent": "CreatorDash/1.0.0 (by /u/YourRedditUsername)",
+  "User-Agent": "CreatorDash/1.0.0",
   Accept: "application/json",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Accept-Encoding": "gzip, deflate, br",
+  Connection: "keep-alive",
 };
 
 // Get posts from Reddit
@@ -29,7 +32,14 @@ export const getPosts = async (req: Request, res: Response) => {
         params: {
           limit: Number(limit),
           raw_json: 1,
+          after: req.query.after || undefined,
+          before: req.query.before || undefined,
+          count: req.query.count || undefined,
+          show: "all",
+          sr_detail: true,
         },
+        timeout: 10000, // 10 second timeout
+        validateStatus: (status) => status < 500, // Accept all responses except 5xx errors
       }
     );
 
@@ -53,6 +63,10 @@ export const getPosts = async (req: Request, res: Response) => {
       permalink: post.data.permalink,
       is_video: post.data.is_video,
       media: post.data.media,
+      subreddit_name_prefixed: post.data.subreddit_name_prefixed,
+      subreddit_subscribers: post.data.subreddit_subscribers,
+      post_hint: post.data.post_hint,
+      domain: post.data.domain,
     }));
 
     res.json({
@@ -61,6 +75,9 @@ export const getPosts = async (req: Request, res: Response) => {
         posts,
         subreddit,
         total: posts.length,
+        after: response.data.data.after,
+        before: response.data.data.before,
+        dist: response.data.data.dist,
       },
     });
   } catch (error) {
@@ -79,12 +96,14 @@ export const getPosts = async (req: Request, res: Response) => {
           error:
             "Access to subreddit forbidden. Please try again in a few minutes.",
           details: error.response.data,
+          headers: error.response.headers,
         });
       }
       if (error.response?.status === 429) {
         return res.status(429).json({
           success: false,
           error: "Too many requests. Please try again in a few minutes.",
+          retryAfter: error.response.headers["retry-after"],
         });
       }
     }
