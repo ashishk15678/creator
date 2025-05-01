@@ -10,9 +10,7 @@ export const getPosts = async (req: Request, res: Response) => {
   try {
     const { limit = 25, sort = "hot" } = req.query;
 
-    console.log("Fetching Reddit posts with params:", { limit, sort });
-
-    // Make request to Reddit API
+    // Make request to Reddit API with proper headers
     const response = await axios({
       method: "get",
       url: `${REDDIT_API_BASE}/${sort}.json`,
@@ -21,20 +19,18 @@ export const getPosts = async (req: Request, res: Response) => {
         raw_json: 1,
       },
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": "CreatorDash/1.0 (by /u/ashish)",
         Accept: "application/json",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate, br",
         Connection: "keep-alive",
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
       },
       timeout: 10000,
     });
 
-    console.log("Reddit API response status:", response.status);
-
     if (!response.data?.data?.children) {
-      console.error("Invalid response format:", response.data);
       return res.status(500).json({
         success: false,
         error: "Invalid response format from Reddit API",
@@ -42,24 +38,54 @@ export const getPosts = async (req: Request, res: Response) => {
     }
 
     // Transform posts to match frontend interface
-    const posts = response.data.data.children.map((post: any) => ({
-      id: post.data.id,
-      title: post.data.title,
-      content: post.data.selftext,
-      author: post.data.author,
-      subreddit: post.data.subreddit,
-      score: post.data.score,
-      num_comments: post.data.num_comments,
-      created_utc: post.data.created_utc,
-      permalink: post.data.permalink,
-      thumbnail:
-        post.data.thumbnail ||
-        "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png",
-      is_video: post.data.is_video,
-      media: post.data.media,
-    }));
-
-    console.log(`Successfully transformed ${posts.length} posts`);
+    const posts = response.data.data.children
+      .filter((post: any) => post?.data) // Filter out any invalid posts
+      .map((post: any) => ({
+        id: post.data.id,
+        title: post.data.title,
+        content: post.data.selftext || "",
+        author: post.data.author || "[deleted]",
+        subreddit: post.data.subreddit,
+        score: post.data.score || 0,
+        num_comments: post.data.num_comments || 0,
+        created_utc: post.data.created_utc,
+        permalink: post.data.permalink,
+        thumbnail:
+          post.data.thumbnail &&
+          post.data.thumbnail !== "self" &&
+          post.data.thumbnail !== "default"
+            ? post.data.thumbnail
+            : "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png",
+        is_video: post.data.is_video || false,
+        media: post.data.media || null,
+        url: post.data.url,
+        domain: post.data.domain,
+        over_18: post.data.over_18 || false,
+        spoiler: post.data.spoiler || false,
+        stickied: post.data.stickied || false,
+        is_self: post.data.is_self || false,
+        is_original_content: post.data.is_original_content || false,
+        is_reddit_media_domain: post.data.is_reddit_media_domain || false,
+        is_meta: post.data.is_meta || false,
+        is_created_from_ads_ui: post.data.is_created_from_ads_ui || false,
+        is_crosspostable: post.data.is_crosspostable || false,
+        is_robot_indexable: post.data.is_robot_indexable || false,
+        upvote_ratio: post.data.upvote_ratio || 0,
+        total_awards_received: post.data.total_awards_received || 0,
+        all_awardings: post.data.all_awardings || [],
+        gilded: post.data.gilded || 0,
+        author_flair_text: post.data.author_flair_text || null,
+        author_flair_background_color:
+          post.data.author_flair_background_color || null,
+        author_flair_text_color: post.data.author_flair_text_color || null,
+        author_flair_type: post.data.author_flair_type || null,
+        author_flair_css_class: post.data.author_flair_css_class || null,
+        author_flair_template_id: post.data.author_flair_template_id || null,
+        author_flair_richtext: post.data.author_flair_richtext || [],
+        author_flair_icon: post.data.author_flair_icon || null,
+        author_flair_icon_url: post.data.author_flair_icon_url || null,
+        author_flair_icon_emoji: post.data.author_flair_icon_emoji || null,
+      }));
 
     // Return success response
     return res.json({
@@ -70,19 +96,37 @@ export const getPosts = async (req: Request, res: Response) => {
     console.error("Error fetching Reddit posts:", error);
 
     if (axios.isAxiosError(error)) {
-      console.error("Axios error details:", {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        headers: error.response?.headers,
-      });
+      const status = error.response?.status;
 
-      return res.status(error.response?.status || 500).json({
-        success: false,
-        error: error.response?.data?.message || "Failed to fetch Reddit posts",
-        details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
-      });
+      // Handle specific error cases
+      switch (status) {
+        case 403:
+          return res.status(403).json({
+            success: false,
+            error:
+              "Access to Reddit API is restricted. Please try again later.",
+          });
+        case 429:
+          return res.status(429).json({
+            success: false,
+            error:
+              "Too many requests to Reddit API. Please try again in a few minutes.",
+          });
+        case 404:
+          return res.status(404).json({
+            success: false,
+            error: "Reddit API endpoint not found.",
+          });
+        default:
+          return res.status(status || 500).json({
+            success: false,
+            error: "Failed to fetch Reddit posts",
+            details:
+              process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined,
+          });
+      }
     }
 
     return res.status(500).json({
