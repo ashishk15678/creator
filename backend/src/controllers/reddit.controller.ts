@@ -5,7 +5,8 @@ import { IUser } from "../models/User";
 // Reddit API configuration
 const REDDIT_API_BASE = "https://www.reddit.com";
 const REDDIT_API_HEADERS = {
-  "User-Agent": "CreatorDash/1.0.0",
+  "User-Agent": "CreatorDash/1.0.0 (by /u/YourRedditUsername)",
+  Accept: "application/json",
 };
 
 // Get posts from Reddit
@@ -27,6 +28,7 @@ export const getPosts = async (req: Request, res: Response) => {
         headers: REDDIT_API_HEADERS,
         params: {
           limit: Number(limit),
+          raw_json: 1,
         },
       }
     );
@@ -43,7 +45,9 @@ export const getPosts = async (req: Request, res: Response) => {
       subreddit: post.data.subreddit,
       score: post.data.score,
       url: post.data.url,
-      thumbnail: post.data.thumbnail,
+      thumbnail:
+        post.data.thumbnail ||
+        "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png",
       created_utc: post.data.created_utc,
       num_comments: post.data.num_comments,
       permalink: post.data.permalink,
@@ -72,7 +76,15 @@ export const getPosts = async (req: Request, res: Response) => {
       if (error.response?.status === 403) {
         return res.status(403).json({
           success: false,
-          error: "Access to subreddit forbidden",
+          error:
+            "Access to subreddit forbidden. Please try again in a few minutes.",
+          details: error.response.data,
+        });
+      }
+      if (error.response?.status === 429) {
+        return res.status(429).json({
+          success: false,
+          error: "Too many requests. Please try again in a few minutes.",
         });
       }
     }
@@ -80,6 +92,10 @@ export const getPosts = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: "Failed to fetch Reddit posts",
+      details:
+        process.env.NODE_ENV === "development"
+          ? (error as Error).message
+          : undefined,
     });
   }
 };
