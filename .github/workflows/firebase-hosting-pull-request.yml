@@ -17,5 +17,5 @@ jobs:
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CREATOR_A2BB9 }}
-          projectId: creator-a2bb9
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CREATOR_7553B }}
+          projectId: creator-7553b

@@ -5,7 +5,7 @@ interface Config {
 }
 
 const development: Config = {
-  API_URL: "https://creator-n900.onrender.com/api",
+  API_URL: "http://localhost:5000/api",
   APP_NAME: "Creator Dashboard",
   STORAGE_PREFIX: "creator_dash_",
 };
@@ -16,7 +16,11 @@ const production: Config = {
   STORAGE_PREFIX: "creator_dash_",
 };
 
-const config: Config =
-  process.env.NODE_ENV === "production" ? production : development;
+// Check if we're in production environment
+const isProduction =
+  process.env.NODE_ENV === "production" ||
+  window.location.hostname === "creator-7553b.web.app";
+
+const config: Config = isProduction ? production : development;
 
 export default config;

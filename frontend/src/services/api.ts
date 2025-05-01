@@ -6,6 +6,10 @@ const api = axios.create({
   baseURL: config.API_URL,
   headers: {
     "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, DELETE, PATCH",
+    "Access-Control-Allow-Headers":
+      "Content-Type, Authorization, X-Requested-With",
   },
   withCredentials: false, // Changed to false since we're using token-based auth
 });
