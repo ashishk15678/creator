@@ -1,18 +1,18 @@
 import api from "./api";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-// Twitter API configuration
-const TWITTER_API_KEY = import.meta.env.VITE_TWITTER_API_KEY;
-const TWITTER_API_SECRET = import.meta.env.VITE_TWITTER_API_SECRET;
-const TWITTER_ACCESS_TOKEN = import.meta.env.VITE_TWITTER_ACCESS_TOKEN;
-const TWITTER_ACCESS_SECRET = import.meta.env.VITE_TWITTER_ACCESS_SECRET;
+// // Twitter API configuration
+// const TWITTER_API_KEY = import.meta.env.VITE_TWITTER_API_KEY;
+// const TWITTER_API_SECRET = import.meta.env.VITE_TWITTER_API_SECRET;
+// const TWITTER_ACCESS_TOKEN = import.meta.env.VITE_TWITTER_ACCESS_TOKEN;
+// const TWITTER_ACCESS_SECRET = import.meta.env.VITE_TWITTER_ACCESS_SECRET;
 
-// LinkedIn API configuration
-const LINKEDIN_CLIENT_ID = import.meta.env.VITE_LINKEDIN_CLIENT_ID;
-const LINKEDIN_CLIENT_SECRET = import.meta.env.VITE_LINKEDIN_CLIENT_SECRET;
-const LINKEDIN_ACCESS_TOKEN = import.meta.env.VITE_LINKEDIN_ACCESS_TOKEN;
-const LINKEDIN_USER_ID = import.meta.env.VITE_LINKEDIN_USER_ID;
+// // LinkedIn API configuration
+// const LINKEDIN_CLIENT_ID = import.meta.env.VITE_LINKEDIN_CLIENT_ID;
+// const LINKEDIN_CLIENT_SECRET = import.meta.env.VITE_LINKEDIN_CLIENT_SECRET;
+// const LINKEDIN_ACCESS_TOKEN = import.meta.env.VITE_LINKEDIN_ACCESS_TOKEN;
+// const LINKEDIN_USER_ID = import.meta.env.VITE_LINKEDIN_USER_ID;
 
 interface SocialMediaPost {
   id: string;
