@@ -22,6 +22,11 @@ export const configureApi = (store: any) => {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
+      // Add CORS headers for production
+      if (window.location.hostname === "creator-7553b.web.app") {
+        config.headers["Access-Control-Allow-Origin"] = "*";
+      }
+
       return config;
     },
     (error) => {
