@@ -19,7 +19,8 @@ const production: Config = {
 // Check if we're in production environment
 const isProduction =
   process.env.NODE_ENV === "production" ||
-  window.location.hostname === "creator-7553b.web.app";
+  window.location.hostname === "creator-7553b.web.app" ||
+  window.location.hostname === "creator-n900.onrender.com";
 
 const config: Config = isProduction ? production : development;
 

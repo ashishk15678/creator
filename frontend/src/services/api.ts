@@ -6,12 +6,8 @@ const api = axios.create({
   baseURL: config.API_URL,
   headers: {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, DELETE, PATCH",
-    "Access-Control-Allow-Headers":
-      "Content-Type, Authorization, X-Requested-With",
   },
-  withCredentials: false, // Changed to false since we're using token-based auth
+  withCredentials: false,
 });
 
 // Function to configure the API with store
@@ -24,11 +20,6 @@ export const configureApi = (store: any) => {
 
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-      }
-
-      // Add CORS headers for production
-      if (window.location.hostname === "creator-7553b.web.app") {
-        config.headers["Access-Control-Allow-Origin"] = "*";
       }
 
       return config;
