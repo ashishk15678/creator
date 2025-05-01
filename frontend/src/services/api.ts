@@ -7,7 +7,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true,
+  withCredentials: false, // Changed to false since we're using token-based auth
 });
 
 // Function to configure the API with store

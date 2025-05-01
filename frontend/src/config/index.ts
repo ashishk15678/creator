@@ -5,13 +5,13 @@ interface Config {
 }
 
 const development: Config = {
-  API_URL: "http://localhost:5000/api",
+  API_URL: "https://creator-n900.onrender.com/api",
   APP_NAME: "Creator Dashboard",
   STORAGE_PREFIX: "creator_dash_",
 };
 
 const production: Config = {
-  API_URL: "https://vertx-creator-dash.onrender.com/api",
+  API_URL: "https://creator-n900.onrender.com/api",
   APP_NAME: "Creator Dashboard",
   STORAGE_PREFIX: "creator_dash_",
 };

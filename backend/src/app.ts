@@ -10,8 +10,8 @@ const app = express();
 const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
-      ? "https://vertx-creator-dash.vercel.app"
-      : "http://localhost:3000",
+      ? "https://creator-n900.onrender.com"
+      : "http://localhost:5173",
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   credentials: true,
