@@ -10,113 +10,47 @@ export const getPosts = async (req: Request, res: Response) => {
   try {
     const { limit = 25, sort = "hot" } = req.query;
 
-    // Validate sort parameter
-    const validSorts = ["hot", "new", "top", "rising"];
-    if (typeof sort !== "string" || !validSorts.includes(sort)) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid sort parameter. Must be one of: hot, new, top, rising",
-      });
-    }
-
-    // Make request to Reddit API with proper headers
+    // Make request to Reddit API
     const response = await axios({
       method: "get",
       url: `${REDDIT_API_BASE}/${sort}.json`,
       params: {
         limit: Number(limit),
         raw_json: 1,
-        show: "all",
-        sr_detail: true,
       },
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept: "application/json, text/plain, */*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        Connection: "keep-alive",
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin",
-        DNT: "1",
       },
-      timeout: 15000,
-      maxRedirects: 5,
-      validateStatus: (status) => status < 500,
     });
 
-    // Check if we have valid data
-    if (!response.data?.data?.children) {
-      return res.status(404).json({
-        success: false,
-        error: "Unable to fetch popular posts",
-      });
-    }
-
-    // Extract and transform posts
-    const posts = response.data.data.children
-      .filter((post: any) => post?.data) // Filter out any invalid posts
-      .map((post: any) => ({
-        id: post.data.id,
-        title: post.data.title,
-        content: post.data.selftext,
-      }));
+    // Transform posts to match frontend interface
+    const posts = response.data.data.children.map((post: any) => ({
+      id: post.data.id,
+      title: post.data.title,
+      content: post.data.selftext,
+      author: post.data.author,
+      subreddit: post.data.subreddit,
+      score: post.data.score,
+      num_comments: post.data.num_comments,
+      created_utc: post.data.created_utc,
+      permalink: post.data.permalink,
+      thumbnail:
+        post.data.thumbnail ||
+        "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png",
+      is_video: post.data.is_video,
+      media: post.data.media,
+    }));
 
     // Return success response
     return res.json({
       success: true,
-      data: {
-        posts,
-        sort,
-        total: posts.length,
-        after: response.data.data.after,
-        before: response.data.data.before,
-        dist: response.data.data.dist,
-      },
+      data: posts,
     });
   } catch (error) {
-    // Handle specific error cases
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-      const data = error.response?.data;
-
-      // Handle different error status codes
-      switch (status) {
-        case 404:
-          return res.status(404).json({
-            success: false,
-            error: "Unable to fetch popular posts",
-          });
-        case 403:
-          return res.status(403).json({
-            success: false,
-            error: "Unable to access Reddit. Please try again later.",
-          });
-        case 429:
-          return res.status(429).json({
-            success: false,
-            error: "Too many requests. Please try again in a few minutes.",
-          });
-        default:
-          return res.status(status || 500).json({
-            success: false,
-            error: "Failed to fetch Reddit posts",
-            details: data,
-          });
-      }
-    }
-
-    // Handle other errors
     return res.status(500).json({
       success: false,
       error: "Failed to fetch Reddit posts",
-      details:
-        process.env.NODE_ENV === "development"
-          ? (error as Error).message
-          : undefined,
     });
   }
 };
